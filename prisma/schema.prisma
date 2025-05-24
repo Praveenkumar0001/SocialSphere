@@ -1,0 +1,334 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String   @id @default(cuid())
+  email             String   @unique
+  username          String   @unique
+  name              String
+  bio               String?
+  avatar            String?
+  coverImage        String?
+  website           String?
+  location          String?
+  birthDate         DateTime?
+  isVerified        Boolean  @default(false)
+  isPrivate         Boolean  @default(false)
+  followersCount    Int      @default(0)
+  followingCount    Int      @default(0)
+  postsCount        Int      @default(0)
+  publicKey         String?  // For E2E encryption
+  stripeAccountId   String?  // For marketplace payments
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  posts             Post[]
+  comments          Comment[]
+  likes             Like[]
+  stories           Story[]
+  collections       Collection[]
+  followers         Follow[] @relation("UserFollowers")
+  following         Follow[] @relation("UserFollowing")
+  sentMessages      Message[] @relation("MessageSender")
+  receivedMessages  Message[] @relation("MessageRecipient")
+  notifications     Notification[]
+  marketplaceListings MarketplaceListing[]
+  purchases         Transaction[] @relation("TransactionBuyer")
+  sales             Transaction[] @relation("TransactionSeller")
+  messageReactions  MessageReaction[]
+  tutorialProgress  TutorialProgress[]
+
+  @@map("users")
+}
+
+model Post {
+  id          String   @id @default(cuid())
+  content     String
+  imageUrl    String?
+  videoUrl    String?
+  type        PostType @default(TEXT)
+  isPublic    Boolean  @default(true)
+  likesCount  Int      @default(0)
+  commentsCount Int    @default(0)
+  sharesCount Int      @default(0)
+  authorId    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  author      User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments    Comment[]
+  likes       Like[]
+  collections CollectionPost[]
+
+  @@map("posts")
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  postId    String
+  authorId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  post      Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author    User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@map("comments")
+}
+
+model Like {
+  id     String @id @default(cuid())
+  postId String
+  userId String
+
+  // Relations
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@map("likes")
+}
+
+model Follow {
+  id          String @id @default(cuid())
+  followerId  String
+  followingId String
+
+  // Relations
+  follower    User @relation("UserFollowers", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User @relation("UserFollowing", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@map("follows")
+}
+
+model Story {
+  id        String   @id @default(cuid())
+  content   String?
+  imageUrl  String?
+  videoUrl  String?
+  authorId  String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  // Relations
+  author    User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@map("stories")
+}
+
+model Collection {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  isPublic    Boolean  @default(true)
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  posts       CollectionPost[]
+
+  @@map("collections")
+}
+
+model CollectionPost {
+  id           String @id @default(cuid())
+  collectionId String
+  postId       String
+
+  // Relations
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  post         Post       @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([collectionId, postId])
+  @@map("collection_posts")
+}
+
+model Message {
+  id             String   @id @default(cuid())
+  content        String
+  senderId       String
+  recipientId    String
+  conversationId String
+  type           MessageType @default(TEXT)
+  encrypted      Boolean  @default(false)
+  readAt         DateTime?
+  createdAt      DateTime @default(now())
+
+  // Relations
+  sender         User @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  recipient      User @relation("MessageRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  reactions      MessageReaction[]
+
+  @@map("messages")
+}
+
+model MessageReaction {
+  id        String @id @default(cuid())
+  messageId String
+  userId    String
+  emoji     String
+  createdAt DateTime @default(now())
+
+  // Relations
+  message   Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId, emoji])
+  @@map("message_reactions")
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  data      Json?
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  // Relations
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model MarketplaceListing {
+  id              String   @id @default(cuid())
+  title           String
+  description     String
+  price           Float
+  category        String
+  sellerId        String
+  status          ListingStatus @default(ACTIVE)
+  stripeProductId String?
+  stripePriceId   String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  seller          User @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  images          MarketplaceImage[]
+  transactions    Transaction[]
+
+  @@map("marketplace_listings")
+}
+
+model MarketplaceImage {
+  id        String @id @default(cuid())
+  listingId String
+  url       String
+  order     Int    @default(0)
+
+  // Relations
+  listing   MarketplaceListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@map("marketplace_images")
+}
+
+model Transaction {
+  id              String            @id @default(cuid())
+  listingId       String
+  buyerId         String
+  sellerId        String
+  amount          Float
+  status          TransactionStatus @default(PENDING)
+  stripeSessionId String?
+  completedAt     DateTime?
+  createdAt       DateTime          @default(now())
+
+  // Relations
+  listing         MarketplaceListing @relation(fields: [listingId], references: [id])
+  buyer           User               @relation("TransactionBuyer", fields: [buyerId], references: [id])
+  seller          User               @relation("TransactionSeller", fields: [sellerId], references: [id])
+
+  @@map("transactions")
+}
+
+model Tutorial {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  category    String
+  steps       Json
+  difficulty  String   @default("beginner")
+  estimatedTime Int    // in minutes
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  progress    TutorialProgress[]
+
+  @@map("tutorials")
+}
+
+model TutorialProgress {
+  id           String   @id @default(cuid())
+  userId       String
+  tutorialId   String
+  currentStep  Int      @default(0)
+  completed    Boolean  @default(false)
+  completedAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tutorial     Tutorial @relation(fields: [tutorialId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tutorialId])
+  @@map("tutorial_progress")
+}
+
+enum PostType {
+  TEXT
+  IMAGE
+  VIDEO
+  POLL
+  STORY
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  VIDEO
+  AUDIO
+  FILE
+}
+
+enum NotificationType {
+  LIKE
+  COMMENT
+  FOLLOW
+  MESSAGE
+  MENTION
+  SALE_COMPLETED
+  PURCHASE_COMPLETED
+}
+
+enum ListingStatus {
+  ACTIVE
+  SOLD
+  INACTIVE
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+}

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -8,6 +8,7 @@ import { VideoCall } from "@/components/video-call"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Search, Video, Phone, Star, Clock, Plus } from "lucide-react"
 import { toast } from "@/components/ui/use-toast"
+import { VirtualBackground } from "@/components/virtual-background"
 
 interface Contact {
   id: string
@@ -147,6 +148,8 @@ export default function VideoCallPage() {
       description: "Contact has been added to favorites",
     })
   }
+
+  const videoRef = useRef<HTMLVideoElement>(null)
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -300,6 +303,14 @@ export default function VideoCallPage() {
           onDecline={handleDeclineCall}
         />
       )}
+
+      {/* Add this in the video call controls */}
+      <VirtualBackground
+        videoRef={videoRef}
+        onBackgroundChange={(background) => {
+          console.log("Background changed:", background)
+        }}
+      />
     </div>
   )
 }

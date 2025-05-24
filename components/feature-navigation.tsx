@@ -6,7 +6,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { BarChart2, Calendar, Video, MessageCircle, Settings, Menu } from "lucide-react"
+import { BarChart2, Calendar, Video, MessageCircle, Settings, Menu, ShoppingBag } from "lucide-react"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 
 interface FeatureLink {
@@ -27,6 +27,13 @@ export function FeatureNavigation() {
       href: "/dashboard",
       icon: BarChart2,
       description: "Your personalized feed and activity",
+    },
+    {
+      name: "Marketplace",
+      href: "/marketplace",
+      icon: ShoppingBag,
+      description: "Buy and sell items with your community",
+      isNew: true,
     },
     {
       name: "Analytics",
