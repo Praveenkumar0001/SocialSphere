@@ -18,7 +18,7 @@ type NotificationContextType = {
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined)
 
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
-  const [notifications, setNotifications] = useState<Notification[]>(initialNotifications)
+  const [notifications, setNotifications] = useState<Notification[]>(initialNotifications ?? [])
   const { toast } = useToast()
 
   const unreadCount = notifications.filter((notification) => !notification.read).length
@@ -56,7 +56,6 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     setNotifications((prev) => prev.map((notification) => ({ ...notification, read: true })))
   }, [])
 
-  // Simulate receiving notifications
   useEffect(() => {
     const types: Notification["type"][] = ["like", "comment", "follow", "mention", "message"]
     const senders = [
@@ -96,7 +95,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         content,
         postId,
       })
-    }, 45000) // New notification every 45 seconds
+    }, 45000)
 
     return () => clearInterval(interval)
   }, [addNotification])

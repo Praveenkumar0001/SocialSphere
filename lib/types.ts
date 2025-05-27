@@ -76,16 +76,16 @@ export interface Conversation {
   updatedAt: string
 }
 
-export interface Notification {
-  id: string
-  userId: string
-  type: "like" | "comment" | "follow" | "mention" | "message"
-  actorId: string
-  postId?: string
-  commentId?: string
-  read: boolean
-  createdAt: string
-}
+// export interface Notification {
+//   id: string
+//   userId: string
+//   type: "like" | "comment" | "follow" | "mention" | "message"
+//   actorId: string
+//   postId?: string
+//   commentId?: string
+//   read: boolean
+//   createdAt: string
+// }
 
 export interface SearchResult {
   type: "user" | "post" | "hashtag"
@@ -144,4 +144,22 @@ export interface TrendingTopic {
   count: number
   category?: string
   posts: string[] // Array of post IDs
+}
+export type NotificationType = "like" | "comment" | "follow" | "mention" | "message"
+
+// export type User = {
+//   id: string
+//   name: string
+//   username: string
+//   avatar: string
+// }
+
+export type Notification = {
+  id: string
+  type: NotificationType
+  sender: User
+  postId?: string
+  content?: string
+  read: boolean
+  createdAt: string
 }
